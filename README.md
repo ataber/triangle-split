@@ -17,9 +17,9 @@ var refined        = split(bunny.positions, bunny.cells, 0.01, 1000);
 console.log(refined) # <- {positions: [[0.5,0.2,0.1], ...], cells: [[0,1,2],...]}
 ```
 
-`require("triangle-split")(cells, positions[, edgeThreshold, maxIterations])`
+`require("triangle-split")(cells, positions[, areaThreshold, maxIterations])`
 ----------------------------------------------------
-This returns a simplicial complex that has maximum edge length less than `edgeThreshold`. By default, `edgeThreshold` is set to the mean edge length. By default it will split indefinitely, which can be customized by the `maxIterations` argument. Note: this function modifies `cells` and `positions` in-place, so create a copy before using if needed.
+This returns a simplicial complex that has maximum cell area less than `areaThreshold`. By default, `areaThreshold` is set to the mean triangle area. By default it will split indefinitely, which can be customized by the `maxIterations` argument. Note: this function modifies `cells` and `positions` in-place, so create a copy before using if needed.
 
 ## Contributing
 

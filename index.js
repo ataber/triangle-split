@@ -129,7 +129,6 @@ module.exports = function(cells, positions, threshold, maxIterations) {
 
     edgesWithModifiedIncidence.map(function(modifiedEdge, i) {
       var edgeToCellIncidence = incidentCells[i].map(function(cellIndex) {
-        // cellToEdges[cellIndex] = new Set();
         return newCellIndices[cellIndex];
       });
 
