@@ -1,17 +1,8 @@
-// var bunny = require('bunny');
+var bunny = require('bunny');
 var split = require('./index');
 var normals = require('normals');
-var bunny = {
-  positions: [
-    [1, 1, 0],
-    [1, -1, 0],
-    [-1, 1, 0],
-    [-1, -1, 0]
-  ],
-  cells: [[0,1,2], [1,2,3]]
-}
 console.time('refine');
-var refined = split(bunny.cells, bunny.positions, 0.01, 200);
+var refined = split(bunny.cells, bunny.positions, 1e-9, 10000);
 console.timeEnd('refine');
 var norms = normals.vertexNormals(refined.cells, refined.positions);
 

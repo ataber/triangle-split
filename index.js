@@ -7,16 +7,18 @@ module.exports = function(cells, positions, threshold, maxIterations) {
 
   var scratch = new Array(3);
   var heap = new Heap((a, b) => b.squaredArea - a.squaredArea);
+  var heapArray = [];
   cells.map(function(cell, i) {
-    heap.push({
+    var heapCell = {
       squaredArea: computeSquaredArea(cell.map(function(i) {
         return positions[i];
       })),
       cell: cell,
       index: i
-    });
+    }
+    heap.push(heapCell);
+    heapArray.push(heapCell);
   });
-  var heapArray = heap.toArray();
 
   if (threshold == null) {
     var meanCellArea = 0;
@@ -56,8 +58,9 @@ module.exports = function(cells, positions, threshold, maxIterations) {
 
     var cell = element.cell;
     var edgeIndices = cellToEdges[element.index];
+
     var maxLength = 0;
-    var longestEdgeIndex;
+    var longestEdgeIndex = null;
     edgeIndices.forEach(function(edgeIndex) {
       var edge = edges[edgeIndex];
       vec3.subtract(scratch, positions[edge[0]], positions[edge[1]]);
@@ -98,7 +101,7 @@ module.exports = function(cells, positions, threshold, maxIterations) {
         newCell[newCell.indexOf(edge[(i + 1) % 2])] = newVertexIndex;
         newCells.push(newCell);
         var newCellIndex = cells.push(newCell) - 1;
-        cellToEdges[newCellIndex] = new Set();
+        cellToEdges.push(new Set());
         newCellIndices.push(newCellIndex);
 
         var heapCell = {
@@ -126,13 +129,14 @@ module.exports = function(cells, positions, threshold, maxIterations) {
 
     edgesWithModifiedIncidence.map(function(modifiedEdge, i) {
       var edgeToCellIncidence = incidentCells[i].map(function(cellIndex) {
+        // cellToEdges[cellIndex] = new Set();
         return newCellIndices[cellIndex];
       });
 
       if (complex.findCell(edgesToBeAdded, modifiedEdge) >= 0) {
         // this edge is not yet in the incidence table
-        incidence.push(edgeToCellIncidence);
-        var edgeIndex = edges.push(modifiedEdge) - 1;
+        var edgeIndex = incidence.push(edgeToCellIncidence) - 1;
+        edges.push(modifiedEdge);
         edgeToCellIncidence.map(function(globalCellIndex) {
           cellToEdges[globalCellIndex].add(edgeIndex);
         });
@@ -152,15 +156,12 @@ module.exports = function(cells, positions, threshold, maxIterations) {
         }
 
         edgeToCellIncidence.map(function(cell) {
+          cellToEdges[cell].add(edgeIndex);
           incidence[edgeIndex].push(cell);
         });
 
         incidence[edgeIndex] = incidence[edgeIndex].filter(function(cell) {
           return cellsToBeDeleted.indexOf(cell) === -1;
-        });
-
-        edgeToCellIncidence.map(function(globalCellIndex) {
-          cellToEdges[globalCellIndex].add(edgeIndex);
         });
       }
     });
