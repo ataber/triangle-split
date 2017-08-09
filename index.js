@@ -6,11 +6,11 @@ module.exports = function(cells, positions, threshold, maxIterations) {
   complex.normalize(cells);
 
   var scratch = new Array(3);
-  var heap = new Heap((a, b) => b.squaredArea - a.squaredArea);
+  var heap = new Heap((a, b) => b.area - a.area);
   var heapArray = [];
   cells.map(function(cell, i) {
     var heapCell = {
-      squaredArea: computeSquaredArea(cell.map(function(i) {
+      area: computeArea(cell.map(function(i) {
         return positions[i];
       })),
       cell: cell,
@@ -23,7 +23,7 @@ module.exports = function(cells, positions, threshold, maxIterations) {
   if (threshold == null) {
     var meanCellArea = 0;
     heap.toArray().map(function(element) {
-      meanCellArea += Math.sqrt(element.squaredArea);
+      meanCellArea += element.area;
     });
     meanCellArea /= heap.size();
     threshold = meanCellArea;
@@ -43,7 +43,6 @@ module.exports = function(cells, positions, threshold, maxIterations) {
   });
 
   var cellsToBeDeleted = [];
-  var squaredThreshold = threshold * threshold;
   var count = 0;
   while (true) {
     count += 1;
@@ -52,7 +51,7 @@ module.exports = function(cells, positions, threshold, maxIterations) {
     }
 
     var element = heap.pop();
-    if (element.squaredArea < squaredThreshold) {
+    if (element.area < threshold) {
       break;
     }
 
@@ -64,7 +63,7 @@ module.exports = function(cells, positions, threshold, maxIterations) {
     edgeIndices.forEach(function(edgeIndex) {
       var edge = edges[edgeIndex];
       vec3.subtract(scratch, positions[edge[0]], positions[edge[1]]);
-      var length = vec3.squaredLength(scratch);
+      var length = vec3.length(scratch);
       if (length > maxLength) {
         longestEdgeIndex = edgeIndex;
         maxLength = length;
@@ -83,7 +82,7 @@ module.exports = function(cells, positions, threshold, maxIterations) {
     incidence[longestEdgeIndex].map(function(cellIndex) {
       cellsToBeDeleted.push(cellIndex);
       // this cell has effectively been removed from the heap
-      heapArray[cellIndex].squaredArea = 0;
+      heapArray[cellIndex].area = 0;
       heap.updateItem(heapArray[cellIndex]);
 
       var deleteCell = cells[cellIndex];
@@ -105,7 +104,7 @@ module.exports = function(cells, positions, threshold, maxIterations) {
         newCellIndices.push(newCellIndex);
 
         var heapCell = {
-          squaredArea: computeSquaredArea(newCell.map(function(i) {
+          area: computeArea(newCell.map(function(i) {
             return positions[i];
           })),
           cell: newCell,
@@ -178,9 +177,9 @@ module.exports = function(cells, positions, threshold, maxIterations) {
   };
 }
 
-function computeSquaredArea(positions) {
+function computeArea(positions) {
   var edgeA = vec3.subtract([], positions[0], positions[1]);
   var edgeB = vec3.subtract([], positions[1], positions[2]);
   var crossed = vec3.cross([], edgeA, edgeB);
-  return vec3.squaredLength(crossed);
+  return vec3.length(crossed) / 2.0;
 }
