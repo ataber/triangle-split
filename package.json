@@ -1,6 +1,6 @@
 {
   "name": "triangle-split",
-  "version": "1.0.2",
+  "version": "1.0.0",
   "description": "Iteratively split triangles to get a more uniform tessellation",
   "main": "index.js",
   "scripts": {
