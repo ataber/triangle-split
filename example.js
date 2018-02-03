@@ -1,8 +1,10 @@
-var bunny = require('bunny');
+// var bunny = require('bunny');
+var mesh = require('primitive-cylinder')(10, 10, 50, 50, 2);
 var split = require('./index');
 var normals = require('normals');
 console.time('refine');
-var refined = split(bunny.cells, bunny.positions, 1e-9, 10000);
+var refined = split(mesh.cells, mesh.positions, null, 1);
+console.log(refined.cells.length, mesh.cells.length, refined.positions.length, mesh.positions.length)
 console.timeEnd('refine');
 var norms = normals.vertexNormals(refined.cells, refined.positions);
 

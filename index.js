@@ -3,14 +3,16 @@ var Heap = require('heap');
 var complex = require('simplicial-complex');
 
 module.exports = function(cells, positions, threshold, maxIterations) {
+  cells = Array.from(cells);
+  positions = Array.from(positions);
   complex.normalize(cells);
 
   var scratch = new Array(3);
-  var heap = new Heap((a, b) => b.area - a.area);
+  var heap = new Heap((a, b) => b.aspectRatio - a.aspectRatio);
   var heapArray = [];
   cells.map(function(cell, i) {
     var heapCell = {
-      area: computeArea(cell.map(function(i) {
+      aspectRatio: computeAspectRatio(cell.map(function(i) {
         return positions[i];
       })),
       cell: cell,
@@ -21,12 +23,16 @@ module.exports = function(cells, positions, threshold, maxIterations) {
   });
 
   if (threshold == null) {
-    var meanCellArea = 0;
+    var meanAspectRatio = 0;
     heap.toArray().map(function(element) {
-      meanCellArea += element.area;
+      meanAspectRatio += element.aspectRatio;
     });
-    meanCellArea /= heap.size();
-    threshold = meanCellArea;
+    meanAspectRatio /= heap.size();
+    threshold = meanAspectRatio;
+  }
+
+  if (threshold < 1) {
+    throw "Aspect ratio threshold must be >= 1";
   }
 
   var edges = complex.unique(complex.skeleton(cells, 1));
@@ -51,19 +57,20 @@ module.exports = function(cells, positions, threshold, maxIterations) {
     }
 
     var element = heap.pop();
-    if (element.area < threshold) {
+    if (element.aspectRatio < threshold) {
       break;
     }
 
     var cell = element.cell;
     var edgeIndices = cellToEdges[element.index];
 
-    var maxLength = 0;
     var longestEdgeIndex = null;
+    var maxLength = 0;
     edgeIndices.forEach(function(edgeIndex) {
       var edge = edges[edgeIndex];
       vec3.subtract(scratch, positions[edge[0]], positions[edge[1]]);
       var length = vec3.length(scratch);
+
       if (length > maxLength) {
         longestEdgeIndex = edgeIndex;
         maxLength = length;
@@ -82,7 +89,7 @@ module.exports = function(cells, positions, threshold, maxIterations) {
     incidence[longestEdgeIndex].map(function(cellIndex) {
       cellsToBeDeleted.push(cellIndex);
       // this cell has effectively been removed from the heap
-      heapArray[cellIndex].area = 0;
+      heapArray[cellIndex].aspectRatio = 0;
       heap.updateItem(heapArray[cellIndex]);
 
       var deleteCell = cells[cellIndex];
@@ -104,7 +111,7 @@ module.exports = function(cells, positions, threshold, maxIterations) {
         newCellIndices.push(newCellIndex);
 
         var heapCell = {
-          area: computeArea(newCell.map(function(i) {
+          aspectRatio: computeAspectRatio(newCell.map(function(i) {
             return positions[i];
           })),
           cell: newCell,
@@ -177,9 +184,13 @@ module.exports = function(cells, positions, threshold, maxIterations) {
   };
 }
 
-function computeArea(positions) {
-  var edgeA = vec3.subtract([], positions[0], positions[1]);
-  var edgeB = vec3.subtract([], positions[1], positions[2]);
-  var crossed = vec3.cross([], edgeA, edgeB);
-  return vec3.length(crossed) / 2.0;
+function computeAspectRatio(positions) {
+  var scratch = new Array(3);
+  var lengths = positions.map(function(position, index) {
+    vec3.subtract(scratch, position, positions[(index + 1) % 3]);
+    return vec3.length(scratch);
+  });
+  var minLength = Math.min(lengths[0], lengths[1], lengths[2]);
+  var maxLength = Math.max(lengths[0], lengths[1], lengths[2]);
+  return maxLength / minLength;
 }
