@@ -1,5 +1,5 @@
 // var bunny = require('bunny');
-var mesh = require('primitive-cylinder')(10, 10, 50, 50, 2);
+var mesh = require('primitive-cylinder')(10, 10, 50, 10, 1);
 var split = require('./index');
 var normals = require('normals');
 console.time('refine');

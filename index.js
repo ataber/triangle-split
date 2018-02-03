@@ -77,10 +77,22 @@ module.exports = function(cells, positions, threshold, maxIterations) {
       }
     });
 
-    var edge = edges[longestEdgeIndex];
-    vec3.add(scratch, positions[edge[0]], positions[edge[1]]);
+    var edgeIndicesArray = Array.from(edgeIndices);
+    var shortIndex = edgeIndicesArray.indexOf(shortestEdgeIndex);
+    // retrieve other two edges, we'll connect their midpoints
+    var indexA = edgeIndicesArray[(shortIndex + 1) % 3];
+    var indexB = edgeIndicesArray[(shortIndex + 2) % 3];
+
+    var edgeA = edges[indexA];
+    var edgeB = edges[indexB];
+
+    vec3.add(scratch, positions[edgeA[0]], positions[edgeA[1]]);
     vec3.scale(scratch, scratch, 0.5);
-    var newVertexIndex = positions.push(scratch.slice()) - 1;
+    var newVertexIndexA = positions.push(scratch.slice()) - 1;
+
+    vec3.add(scratch, positions[edgeB[0]], positions[edgeB[1]]);
+    vec3.scale(scratch, scratch, 0.5);
+    var newVertexIndexB = positions.push(scratch.slice()) - 1;
 
     var edgesToBeAdded = [];
     var newCells = [];
@@ -104,15 +116,16 @@ module.exports = function(cells, positions, threshold, maxIterations) {
       for (var i = 0; i < 2; i++) {
         // preserve orientation
         var newCell = deleteCell.slice();
-        newCell[newCell.indexOf(edge[(i + 1) % 2])] = newVertexIndex;
+        newCell[newCell.indexOf(edgeA[(i + 1) % 2])] = newVertexIndexA;
+        // newCell[newCell.indexOf(edgeB[(i + 1) % 2])] = newVertexIndexB;
         newCells.push(newCell);
         var newCellIndex = cells.push(newCell) - 1;
         cellToEdges.push(new Set());
         newCellIndices.push(newCellIndex);
 
         var heapCell = {
-          aspectRatio: computeAspectRatio(newCell.map(function(i) {
-            return positions[i];
+          aspectRatio: computeAspectRatio(newCell.map(function(p) {
+            return positions[p];
           })),
           cell: newCell,
           index: newCellIndex
@@ -121,10 +134,12 @@ module.exports = function(cells, positions, threshold, maxIterations) {
         heapArray.push(heapCell);
       }
 
-      var hypotenuse = [oppositeVertex, newVertexIndex];
-      var halfA = [edge[0], newVertexIndex];
-      var halfB = [edge[1], newVertexIndex];
-      [hypotenuse, halfA, halfB].map(function(newEdge) {
+      var crossCut = [newVertexIndexA, newVertexIndexB];
+      var halfA_0 = [edgeA[0], newVertexIndexA];
+      var halfA_1 = [edgeA[1], newVertexIndexA];
+      var halfB_0 = [edgeB[0], newVertexIndexB];
+      var halfB_1 = [edgeB[1], newVertexIndexB];
+      [crossCut, halfA_0, halfA_1, halfB_0, halfB_1].map(function(newEdge) {
         edgesToBeAdded.push(newEdge);
       });
     });
